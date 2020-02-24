@@ -130,6 +130,12 @@ def createAccount(baseEmail, username):
   print('\n\nCreated:')
   browser.printAll()
 
+  with open('accounts.txt', 'a') as file:
+    with contextlib.redirect_stdout(file):
+      file.write(f'Account:\n')
+      browser.printAll()
+      file.write('\n')
+
   # Wait for verification code
   verify = input('Enter Verification: ')
   browser.fillText('emailVerifyCode', verify)
