@@ -2,6 +2,9 @@ import sys
 import time
 import random
 import string
+import contextlib
+import urllib.request
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,6 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 
 EA_URL = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
+USER_CHECK_URL = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
 
 
 class Browser:
@@ -44,10 +48,10 @@ class Browser:
     elif id_or_class == 'class':
       search = (By.CLASS_NAME, id)
     else:
-      sys.exit('Error: clickButton id_or_class value invalid')
+      sys.exit('Error: checkFor id_or_class value invalid')
 
     try:
-      return len(self.browser.find_elements(*search)) > 0
+      return self.browser.find_element(*search).is_displayed()
     except NoSuchElementException:
       return False
 
@@ -110,12 +114,12 @@ def createAccount(baseEmail, username):
   browser.moveToNext()
   browser.keyDown(20)
 
-  # Capcha, Checkboxes
+  # Captcha, Checkboxes
   humanCheck = browser.checkFor('captcha-container2')
   browser.clickButton('contact-me-container')
   browser.clickButton('read-accept-container')
 
-  # If Capcha, wait for human
+  # If Captcha, wait for human
   if humanCheck:
     input('Need human verification. Please complete and hit enter.')
   browser.clickButton('submit-btn')
