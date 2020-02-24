@@ -29,9 +29,9 @@ class Browser:
   def resource_path(self, relative_path):
     # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
     try:
-        base_path = sys._MEIPASS
+      base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.dirname(__file__)
+      base_path = os.path.dirname(__file__)
     return os.path.join(base_path, relative_path)
 
   def start(self):
