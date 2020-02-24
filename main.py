@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import random
 import string
@@ -25,11 +26,19 @@ class Browser:
     self.username = username
     self.password = password
 
+  def resource_path(self, relative_path):
+    # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(__file__)
+    return os.path.join(base_path, relative_path)
+
   def start(self):
     ch_options = webdriver.ChromeOptions()
     ch_options.add_argument('--window-size=100,100')
     ch_options.add_argument('--window-position=0,0')
-    return webdriver.Chrome('./chromedriver', options=ch_options)
+    return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
 
   def printAll(self):
     print(f'Email: {self.email}')
@@ -165,6 +174,9 @@ def randomEmail(baseEmail, size):
 
 
 if __name__ == '__main__':
+  dir_path = os.path.dirname(os.path.realpath(__file__))
+  print('Thanks for using the EA Account Creator tool! A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
+  print(dir_path + '\n')
   try:
     baseEmail = input("Base email address? ")
     while True:
@@ -180,8 +192,8 @@ if __name__ == '__main__':
             print('Username not available.')
         createAccount(baseEmail, username)
       elif choice.lower() in {'n', 'no'}:
-        sys.exit()
+        sys.exit(0)
 
   except KeyboardInterrupt:
     print("Exiting...")
-    sys.exit()
+    sys.exit(0)
