@@ -130,7 +130,7 @@ def createAccount(baseEmail, username):
 
   # If Captcha, wait for human
   if humanCheck:
-    input('Need human verification. Please complete and hit enter.')
+    input('Need human verification. Please complete in chrome, then return and press enter.')
   browser.clickButton('submit-btn')
 
   # Skip real name info
