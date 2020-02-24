@@ -170,7 +170,14 @@ if __name__ == '__main__':
     while True:
       choice = input("Create new account? ")
       if choice.lower() in {'y', 'yes'}:
-        username = input("Desired username: ")
+        valid = False
+        while not valid:
+          username = input("Desired username: ")
+          with urllib.request.urlopen(USER_CHECK_URL + username) as url:
+            data = json.loads(url.read().decode())
+            valid = data['status']
+          if not valid:
+            print('Username not available.')
         createAccount(baseEmail, username)
       elif choice.lower() in {'n', 'no'}:
         sys.exit()
