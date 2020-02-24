@@ -159,10 +159,10 @@ if __name__ == '__main__':
     baseEmail = input("Base email address? ")
     while True:
       choice = input("Create new account? ")
-      if choice.lower() in {'y','yes'}:
+      if choice.lower() in {'y', 'yes'}:
         username = input("Desired username: ")
         createAccount(baseEmail, username)
-      elif choice.lower() in {'n','no'}:
+      elif choice.lower() in {'n', 'no'}:
         sys.exit()
 
   except KeyboardInterrupt:
