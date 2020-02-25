@@ -14,6 +14,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 
 EA_URL = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
 USER_CHECK_URL = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
@@ -65,9 +66,13 @@ class Browser:
       return False
 
   def fillText(self, id, text):
-    textID = WebDriverWait(self.browser, 10).until(
+    try:
+      textID = WebDriverWait(self.browser, 10).until(
         EC.element_to_be_clickable((By.ID, id))
-    )
+      )
+    except TimeoutException:
+      sys.exit(f'Error: Could not find text field: {id}')
+
     textID.send_keys(text)
 
   def clickButton(self, id, id_or_class='id'):
@@ -78,9 +83,13 @@ class Browser:
     else:
       sys.exit('Error: clickButton id_or_class value invalid')
 
-    buttonID = WebDriverWait(self.browser, 10).until(
+    try:
+      buttonID = WebDriverWait(self.browser, 10).until(
         EC.element_to_be_clickable(search)
-    )
+      )
+    except TimeoutException:
+      sys.exit(f'Error: Could not find button with {id_or_class}: {id}')
+
     buttonID.click()
 
   def keyDown(self, num=1):
