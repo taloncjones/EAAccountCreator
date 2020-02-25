@@ -137,9 +137,13 @@ def createAccount(baseEmail, username):
   browser.clickButton('contact-me-container')
   browser.clickButton('read-accept-container')
 
-  # If Captcha, wait for human
+  # If Captcha, wait for human to solve, then continue
   if humanCheck:
-    input('Need human verification. Please complete in chrome, then return and press enter.')
+    verifyHuman = False
+    print('Captcha detected! Please complete captcha to continue...')
+    while not verifyHuman:
+      verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
+
   browser.clickButton('submit-btn')
 
   # Skip real name info
