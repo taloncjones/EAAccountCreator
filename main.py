@@ -41,7 +41,7 @@ class Browser:
 
   def start(self):
     ch_options = webdriver.ChromeOptions()
-    ch_options.add_argument('--window-size=100,100')
+    ch_options.add_argument('--window-size=500,500')
     ch_options.add_argument('--window-position=0,0')
     return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
 
