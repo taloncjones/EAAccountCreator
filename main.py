@@ -42,7 +42,7 @@ class Browser:
   def start(self):
     ch_options = webdriver.ChromeOptions()
     ch_options.add_argument('--window-size=500,500')
-    ch_options.add_argument('--window-position=0,0')
+    ch_options.add_argument('--window-position=-2000,0')
     return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
 
   def printAll(self):
@@ -80,6 +80,12 @@ class Browser:
       return self.browser.find_element(*search).is_displayed()
     except NoSuchElementException:
       return False
+
+  def showWindow(self):
+    self.browser.set_window_position(0,0)
+
+  def hideWindow(self):
+    self.browser.set_window_position(-2000,0)
 
   def fillText(self, id, text):
     try:
@@ -150,9 +156,11 @@ def createAccount(baseEmail, username):
   # If Captcha, wait for human to solve, then continue
   if humanCheck:
     verifyHuman = False
+    browser.showWindow()
     print('Captcha detected! Please complete captcha to continue...')
     while not verifyHuman:
       verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
+    browser.hideWindow()
 
   browser.clickButton('submit-btn')
 
