@@ -87,20 +87,14 @@ class Browser:
 
     textID.send_keys(text)
 
-  def clickButton(self, id, id_or_class='id'):
-    if id_or_class == 'id':
-      search = (By.ID, id)
-    elif id_or_class == 'class':
-      search = (By.CLASS_NAME, id)
-    else:
-      sys.exit('Error: clickButton id_or_class value invalid')
-
+  def clickButton(self, id, lookupType='id'):
+    search = (self.byLookup(lookupType), id)
     try:
       buttonID = WebDriverWait(self.browser, 10).until(
         EC.element_to_be_clickable(search)
       )
     except TimeoutException:
-      sys.exit(f'Error: Could not find button with {id_or_class}: {id}')
+      sys.exit(f'Error: Could not find button with {lookupType}: {id}')
 
     buttonID.click()
 
