@@ -28,6 +28,10 @@ class Browser:
     self.password = password
 
   def resource_path(self, relative_path):
+    '''
+    Returns the absolute location of file at relative_path.
+    relative_path (str): The relative location of the file in question
+    '''
     # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
     try:
       base_path = sys._MEIPASS
