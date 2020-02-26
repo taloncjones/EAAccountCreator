@@ -57,17 +57,18 @@ class Browser:
     self.browser.get(url)
 
   typeSelector = {
-    'id': By.ID,
-    'class': By.CLASS_NAME,
-    'xpath': By.XPATH,
+      'id': By.ID,
+      'class': By.CLASS_NAME,
+      'xpath': By.XPATH,
   }
 
   def byLookup(self, lookupType):
     '''Returns By.ID from typeSelector based on lookupType. If lookupType not found in typeSelector, sys.exit() with error.'''
     selected = self.typeSelector.get(lookupType)
-    if selected: return selected
-    else: sys.exit('Error: Invalid lookupType')
-
+    if selected:
+      return selected
+    else:
+      sys.exit('Error: Invalid lookupType')
 
   def checkFor(self, id, lookupType='id'):
     '''
@@ -82,15 +83,15 @@ class Browser:
       return False
 
   def showWindow(self):
-    self.browser.set_window_position(0,0)
+    self.browser.set_window_position(0, 0)
 
   def hideWindow(self):
-    self.browser.set_window_position(-2000,0)
+    self.browser.set_window_position(-2000, 0)
 
   def fillText(self, id, text):
     try:
       textID = WebDriverWait(self.browser, 10).until(
-        EC.element_to_be_clickable((By.ID, id))
+          EC.element_to_be_clickable((By.ID, id))
       )
     except TimeoutException:
       sys.exit(f'Error: Could not find text field: {id}')
@@ -101,7 +102,7 @@ class Browser:
     search = (self.byLookup(lookupType), id)
     try:
       buttonID = WebDriverWait(self.browser, 10).until(
-        EC.element_to_be_clickable(search)
+          EC.element_to_be_clickable(search)
       )
     except TimeoutException:
       sys.exit(f'Error: Could not find button with {lookupType}: {id}')
