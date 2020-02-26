@@ -1,0 +1,5 @@
+# Ignore accounts.txt
+accounts.txt
+
+# Ignore chromedriver.exe
+chromedriver.exe
