@@ -21,7 +21,8 @@ USER_CHECK_URL = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
 
 
 class Browser:
-  def __init__(self, email, username, password):
+  def __init__(self, browserVer, email, username, password):
+    self.browserVer = browserVer
     self.browser = self.start()
     self.email = email
     self.username = username
@@ -40,10 +41,14 @@ class Browser:
     return os.path.join(base_path, relative_path)
 
   def start(self):
-    ch_options = webdriver.ChromeOptions()
-    ch_options.add_argument('--window-size=500,500')
-    ch_options.add_argument('--window-position=-2000,0')
-    return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
+    if self.browserVer == 'Chrome':
+      ch_options = webdriver.ChromeOptions()
+      ch_options.add_argument('--window-size=500,500')
+      ch_options.add_argument('--window-position=-2000,0')
+      return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
+    elif self.browserVer == 'Mozilla':
+
+      return
 
   def printAll(self):
     print(f'Email: {self.email}')
@@ -122,10 +127,10 @@ class Browser:
       ActionChains(self.browser).send_keys(Keys.TAB).perform()
 
 
-def createAccount(baseEmail, username):
+def createAccount(browserVer, baseEmail, username):
   email = randomEmail(baseEmail, 12)
   password = randomPassword(16)
-  browser = Browser(email, username, password)
+  browser = Browser(browserVer, email, username, password)
   browser.goToURL(EA_URL)
 
   # Initial Email Check
@@ -210,9 +215,24 @@ if __name__ == '__main__':
   print('Thanks for using the EA Account Creator tool! A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
   print(dir_path + '\n')
   try:
-    baseEmail = input("Base email address? ")
     while True:
-      choice = input("Create new account? ")
+      browserChoice = input(
+          'Please select your browser:'
+          '\n1)\tChrome'
+          '\n2)\tMozilla'
+      )
+      if browserChoice == '1' or browserChoice.lower() == 'chrome':
+        browserVer = 'Chrome'
+        break
+      elif browserChoice == '2' or browserChoice.lower() == 'mozilla':
+        browserVer = 'Mozilla'
+        break
+      else:
+        print('Invalid entry. Please choose the cooresponding number or text.')
+
+    baseEmail = input('Base email address? (e.g. user@email.com) ')
+    while True:
+      choice = input('Create new account? ')
       if choice.lower() in {'y', 'yes'}:
         valid = False
         while not valid:
@@ -222,7 +242,7 @@ if __name__ == '__main__':
             valid = data['status']
           if not valid:
             print('Username not available.')
-        createAccount(baseEmail, username)
+        createAccount(browserVer, baseEmail, username)
       elif choice.lower() in {'n', 'no'}:
         sys.exit(0)
 
