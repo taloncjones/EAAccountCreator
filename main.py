@@ -167,7 +167,7 @@ def createAccount(browserVer, baseEmail, username):
     browser.clickButton('contact-me-container')
     browser.clickButton('read-accept-container')
   elif browser.browserVer == 'Mozilla':
-    browser.moveToNext()
+    browser.moveToNext(5 if humanCheck else 1)
     browser.keySpace()
     browser.moveToNext()
     browser.keySpace()
