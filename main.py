@@ -216,7 +216,7 @@ if __name__ == '__main__':
       if choice.lower() in {'y', 'yes'}:
         valid = False
         while not valid:
-          username = input("Desired username: ")
+          username = input('Desired username: ')
           with urllib.request.urlopen(USER_CHECK_URL + username) as url:
             data = json.loads(url.read().decode())
             valid = data['status']
@@ -227,5 +227,5 @@ if __name__ == '__main__':
         sys.exit(0)
 
   except KeyboardInterrupt:
-    print("Exiting...")
+    print('Exiting...')
     sys.exit(0)
