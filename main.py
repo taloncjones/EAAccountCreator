@@ -77,6 +77,7 @@ class Browser:
     if selected:
       return selected
     else:
+      self.quit()
       sys.exit('Error: Invalid lookupType')
 
   def checkFor(self, id, lookupType='id'):
@@ -103,6 +104,7 @@ class Browser:
           EC.element_to_be_clickable((By.ID, id))
       )
     except TimeoutException:
+      self.quit()
       sys.exit(f'Error: Could not find text field: {id}')
 
     textID.send_keys(text)
@@ -114,6 +116,7 @@ class Browser:
           EC.element_to_be_clickable(search)
       )
     except TimeoutException:
+      self.quit()
       sys.exit(f'Error: Could not find button with {lookupType}: {id}')
 
     buttonID.click()
