@@ -2,4 +2,10 @@
 accounts.txt
 
 # Ignore chromedriver.exe
-chromedriver.exe
+chromedriver
+
+# Ignore output folder (from exe creation)
+/output
+
+# Ignore __pycache__ (from import main.py)
+/__pycache__
