@@ -160,8 +160,14 @@ def createAccount(browserVer, baseEmail, username):
 
   # Captcha, Checkboxes
   humanCheck = browser.checkFor('captcha-container2')
-  browser.clickButton('contact-me-container')
-  browser.clickButton('read-accept-container')
+  if browser.browserVer == 'Chrome':
+    browser.clickButton('contact-me-container')
+    browser.clickButton('read-accept-container')
+  elif browser.browserVer == 'Mozilla':
+    browser.moveToNext()
+    browser.keySpace()
+    browser.moveToNext()
+    browser.keySpace()
 
   # If Captcha, wait for human to solve, then continue
   if humanCheck:
