@@ -104,7 +104,7 @@ class Browser:
           EC.element_to_be_clickable((By.ID, id))
       )
     except TimeoutException:
-      self.quit()
+      self.showWindow()
       sys.exit(f'Error: Could not find text field: {id}')
 
     textID.send_keys(text)
@@ -116,7 +116,7 @@ class Browser:
           EC.element_to_be_clickable(search)
       )
     except TimeoutException:
-      self.quit()
+      self.showWindow()
       sys.exit(f'Error: Could not find button with {lookupType}: {id}')
 
     buttonID.click()
