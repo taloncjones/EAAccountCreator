@@ -47,8 +47,12 @@ class Browser:
       ch_options.add_argument('--window-position=-2000,0')
       return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
     elif self.browserVer == 'Mozilla':
-
-      return
+      mz_options = webdriver.FirefoxOptions()
+      mz_options.add_argument('--width=600')
+      mz_options.add_argument('--height=600')
+      driver = webdriver.Firefox(executable_path=self.resource_path('geckodriver'), options=mz_options)
+      driver.set_window_position(-2000,0)
+      return driver
 
   def printAll(self):
     print(f'Email: {self.email}')
@@ -220,6 +224,7 @@ if __name__ == '__main__':
           'Please select your browser:'
           '\n1)\tChrome'
           '\n2)\tMozilla'
+          '\n'
       )
       if browserChoice == '1' or browserChoice.lower() == 'chrome':
         browserVer = 'Chrome'
