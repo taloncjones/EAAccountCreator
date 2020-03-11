@@ -15,6 +15,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
+from random_word import RandomWords
 
 EA_URL = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
 USER_CHECK_URL = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
@@ -250,7 +251,10 @@ if __name__ == '__main__':
       if choice.lower() in {'y', 'yes'}:
         valid = False
         while not valid:
-          username = input('Desired username: ')
+          username = input('Desired username (blank for random): ')
+          if not username:
+            username = ''.join(RandomWords().get_random_words(limit=2, maxLength=6))
+            print(f'Attempting: {username}')
           with urllib.request.urlopen(USER_CHECK_URL + username) as url:
             data = json.loads(url.read().decode())
             valid = data['status']
