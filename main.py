@@ -115,7 +115,7 @@ def main():
 	parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
 	parser.add_argument('gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
 	parser.add_argument('--noop', dest='noop', action='store_true',
-						help="Provide flag --noop if you want the operation to be a no-op, meaning it won't actually connect to Adobe Analytics to pull fresh data, but will run all other functions.")
+						help="Provide flag --noop if you want the operation to be a no-op")
 	parser.set_defaults(noop=False)
 
 	# parse args

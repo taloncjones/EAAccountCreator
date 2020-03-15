@@ -1,18 +1,8 @@
 # EA Account Creator
 
-Automate the EA account creation process as much as possible. You will be asked for a base email (e.g. base@gmail.com) which will be used for all created accounts (e.g. base+woeriuwyrieh@gmail.com), and a username (must be unique). The script will then randomly generate a password, create the account, and store the output to `accounts.txt` for future use.
+Automate the EA account creation process as much as possible. You will be asked for a base email (e.g. base@gmail.com) which will be used for all created accounts (e.g. base+woeriuwyrieh@gmail.com), and a username (must be unique). The script will then randomly generate a password, create the account, and push the output to a given Google Sheet.
 
-## Getting Started
-These instructions will allow you to run the EA Account Creator tool on your local machine.
-
-### Executable
-If you don't wish to build the exe or run via script (which requires you do download chromium/geckodriver) you can run [main.exe](Exe/main.exe) on Windows machines. The .exe contains both Chromium and Geckodriver.
-
-### Prerequisites
-If using [main.py](main.py) install the following:
-
-Install Selenium
-> ```pip install selenium```
+#### Installation
 
 Download Chromedriver to the directory containing `main.py`
 > Check your current Chrome version in Chrome by: Menu > Help > About Google Chrome  
@@ -20,11 +10,41 @@ Download Chromedriver to the directory containing `main.py`
 >
 > Download Chromedriver for your Chrome version here: https://chromedriver.chromium.org/downloads
 
-## To-do:
-- [x] Automate continuation after captcha completion: class='fc_meta_success_text'
-- [x] Bundle chromedriver and create .exe for Windows machines
-- [x] Add support for geckodriver (Mozilla) ?
-- [x] Bundle geckodriver into .exe
+
+
+Install required packages:
+
+```
+pip install -r requirements.txt
+```
+
+
+
+#### Usage
+
+```
+usage: main.py [-h] [--noop] baseEmail driverType driverPath keyFile gsheetURL
+
+positional arguments:
+  baseEmail   Provide the base email address from which others will be
+              generated
+  driverType  Provide the type of selenium driver for this run e.g. chrome
+  driverPath  Provide the path of the selenium driver you'll use
+  keyFile     Provide the generic account's key file that has Edit access to
+              the following GSheet
+  gsheetURL   Provide the Google Sheet URL where account details will be
+              appended
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --noop      Provide flag --noop if you want the operation to be a no-op,
+              meaning it won't actually connect to Adobe Analytics to pull
+              fresh data, but will run all other functions.
+```
+
+
+
+
 
 ## Author
 - **Talon Jones** - [taloncjones](https://github.com/taloncjones)
