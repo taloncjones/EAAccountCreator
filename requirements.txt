@@ -1,0 +1,4 @@
+Random_Word==1.0.4
+gspread==3.3.0
+selenium==3.141.0
+oauth2client==4.1.3
