@@ -1,269 +1,153 @@
-import sys
-import os
-import time
 import random
 import string
-import contextlib
 import urllib.request
 import json
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
+import logging
+import argparse
+import Browser.browser as Browser
+import Sheet.sheet as Sheet
+
 from random_word import RandomWords
 
-EA_URL = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
-USER_CHECK_URL = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
+RUN_CONFIG = {}
+RUN_CONFIG['EA_URL'] = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
+RUN_CONFIG['USER_CHECK_URL'] = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
 
+LOGGER = logging.getLogger(__name__)
 
-class Browser:
-  def __init__(self, browserVer, email, username, password):
-    self.browserVer = browserVer
-    self.browser = self.start()
-    self.email = email
-    self.username = username
-    self.password = password
+def createAccount(browserType, browserPath, baseEmail, username):
+	email = randomEmail(baseEmail, 12)
+	password = randomPassword(16)
+	browser = Browser.Browser(browserType, browserPath, email, username, password)
+	browser.goToURL(RUN_CONFIG['EA_URL'])
 
-  def resource_path(self, relative_path):
-    '''
-    Returns the absolute location of file at relative_path.
-    relative_path (str): The relative location of the file in question
-    '''
-    # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
-    try:
-      base_path = sys._MEIPASS
-    except Exception:
-      base_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_path, relative_path)
+	# Initial Email Check
+	browser.fillText('email', email)
+	browser.clickButton('btn-next')
 
-  def start(self):
-    if self.browserVer == 'Chrome':
-      ch_options = webdriver.ChromeOptions()
-      ch_options.add_argument('--window-size=500,500')
-      ch_options.add_argument('--window-position=-2000,0')
-      return webdriver.Chrome(self.resource_path('chromedriver'), options=ch_options)
-    elif self.browserVer == 'Mozilla':
-      mz_options = webdriver.FirefoxOptions()
-      mz_options.add_argument('--width=600')
-      mz_options.add_argument('--height=600')
-      driver = webdriver.Firefox(executable_path=self.resource_path('geckodriver'), options=mz_options)
-      driver.set_window_position(-2000,0)
-      return driver
+	# Username, Password, Security Q
+	browser.fillText('originId', browser.username)
+	browser.fillText('password', browser.password)
+	browser.fillText('confirmPassword', browser.password)
+	browser.moveToNext()
+	browser.keyDown()
+	browser.fillText('securityAnswer', browser.username)
 
-  def printAll(self):
-    print(f'Email: {self.email}')
-    print(f'User: {self.username}')
-    print(f'Pass: {self.password}')
+	# DoB
+	# EA uses DIVs and classes to control and display their dropdowns... Navigating with TAB and ARROWS is a bit easier
+	browser.moveToNext(2)
+	browser.keyDown()
+	browser.moveToNext()
+	browser.keyDown()
+	browser.moveToNext()
+	browser.keyDown(20)
 
-  def quit(self):
-    self.browser.quit()
+	# Captcha, Checkboxes
+	humanCheck = browser.checkFor('captcha-container2')
+	if browser.browserType == 'chrome':
+		browser.clickButton('contact-me-container')
+		browser.clickButton('read-accept-container')
+	elif browser.browserType == 'mozilla':
+		browser.moveToNext(4 if humanCheck else 1)
+		browser.keySpace()
+		browser.moveToNext()
+		browser.keySpace()
 
-  def goToURL(self, url):
-    self.browser.get(url)
+	# If Captcha, wait for human to solve, then continue
+	if humanCheck:
+		verifyHuman = False
+		browser.showWindow()
+		LOGGER.debug('Captcha detected! Please complete captcha to continue...')
+		while not verifyHuman:
+			verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
+		browser.hideWindow()
 
-  typeSelector = {
-      'id': By.ID,
-      'class': By.CLASS_NAME,
-      'xpath': By.XPATH,
-  }
+	browser.clickButton('submit-btn')
 
-  def byLookup(self, lookupType):
-    '''Returns By.ID from typeSelector based on lookupType. If lookupType not found in typeSelector, sys.exit() with error.'''
-    selected = self.typeSelector.get(lookupType)
-    if selected:
-      return selected
-    else:
-      self.quit()
-      sys.exit('Error: Invalid lookupType')
+	# Skip real name info
+	browser.clickButton('btn-skip', 'class')
 
-  def checkFor(self, id, lookupType='id'):
-    '''
-    Checks for element where lookupType = id
-    id (str): What to look for on page
-    [lookupType] (str): What <id> is. e.g. 'id', 'class'
-    '''
-    search = (self.byLookup(lookupType), id)
-    try:
-      return self.browser.find_element(*search).is_displayed()
-    except NoSuchElementException:
-      return False
+	list = [browser.username, browser.email, browser.password]
 
-  def showWindow(self):
-    self.browser.set_window_position(0, 0)
+	# Wait for verification code
+	verify = input('Enter Verification: ')
+	browser.fillText('emailVerifyCode', verify)
+	browser.clickButton('btnMEVVerify')
 
-  def hideWindow(self):
-    self.browser.set_window_position(-2000, 0)
+	# Complete process and exit
+	browser.clickButton('btnMEVComplete')
+	browser.quit()
 
-  def fillText(self, id, text):
-    try:
-      textID = WebDriverWait(self.browser, 10).until(
-          EC.element_to_be_clickable((By.ID, id))
-      )
-    except TimeoutException:
-      self.showWindow()
-      sys.exit(f'Error: Could not find text field: {id}')
+	LOGGER.debug('Account creation complete.\n\n')
 
-    textID.send_keys(text)
-
-  def clickButton(self, id, lookupType='id'):
-    search = (self.byLookup(lookupType), id)
-    try:
-      buttonID = WebDriverWait(self.browser, 10).until(
-          EC.element_to_be_clickable(search)
-      )
-    except TimeoutException:
-      self.showWindow()
-      sys.exit(f'Error: Could not find button with {lookupType}: {id}')
-
-    buttonID.click()
-
-  def keyDown(self, num=1):
-    for _ in range(num):
-      ActionChains(self.browser).send_keys(Keys.ARROW_DOWN).perform()
-
-  def keySpace(self, num=1):
-    for _ in range(num):
-      ActionChains(self.browser).send_keys(Keys.SPACE).perform()
-
-  def moveToNext(self, num=1):
-    for _ in range(num):
-      ActionChains(self.browser).send_keys(Keys.TAB).perform()
-
-
-def createAccount(browserVer, baseEmail, username):
-  email = randomEmail(baseEmail, 12)
-  password = randomPassword(16)
-  browser = Browser(browserVer, email, username, password)
-  browser.goToURL(EA_URL)
-
-  # Initial Email Check
-  browser.fillText('email', email)
-  browser.clickButton('btn-next')
-
-  # Username, Password, Security Q
-  browser.fillText('originId', browser.username)
-  browser.fillText('password', browser.password)
-  browser.fillText('confirmPassword', browser.password)
-  browser.moveToNext()
-  browser.keyDown()
-  browser.fillText('securityAnswer', browser.username)
-
-  # DoB
-  # EA uses DIVs and classes to control and display their dropdowns... Navigating with TAB and ARROWS is a bit easier
-  browser.moveToNext(2)
-  browser.keyDown()
-  browser.moveToNext()
-  browser.keyDown()
-  browser.moveToNext()
-  browser.keyDown(20)
-
-  # Captcha, Checkboxes
-  humanCheck = browser.checkFor('captcha-container2')
-  if browser.browserVer == 'Chrome':
-    browser.clickButton('contact-me-container')
-    browser.clickButton('read-accept-container')
-  elif browser.browserVer == 'Mozilla':
-    browser.moveToNext(4 if humanCheck else 1)
-    browser.keySpace()
-    browser.moveToNext()
-    browser.keySpace()
-
-  # If Captcha, wait for human to solve, then continue
-  if humanCheck:
-    verifyHuman = False
-    browser.showWindow()
-    print('Captcha detected! Please complete captcha to continue...')
-    while not verifyHuman:
-      verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
-    browser.hideWindow()
-
-  browser.clickButton('submit-btn')
-
-  # Skip real name info
-  browser.clickButton('btn-skip', 'class')
-
-  print('\n\nCreated:')
-  browser.printAll()
-
-  with open('accounts.txt', 'a') as file:
-    with contextlib.redirect_stdout(file):
-      file.write(f'Account:\n')
-      browser.printAll()
-      file.write('\n')
-
-  # Wait for verification code
-  verify = input('Enter Verification: ')
-  browser.fillText('emailVerifyCode', verify)
-  browser.clickButton('btnMEVVerify')
-
-  # Complete process and exit
-  browser.clickButton('btnMEVComplete')
-  browser.quit()
-
-  print('Account creation complete.\n\n')
+	return list
 
 
 def randomPassword(size):
-  letters = string.ascii_letters
-  numbers = string.digits
-  lsize = int(size * 3/4)
-  randomLetters = ''.join(random.choice(letters) for i in range(lsize))
-  randomNums = ''.join(random.choice(numbers) for i in range(size - lsize))
-  return randomLetters + randomNums
+	letters = string.ascii_letters
+	numbers = string.digits
+	lsize = int(size * 3 / 4)
+	randomLetters = ''.join(random.choice(letters) for i in range(lsize))
+	randomNums = ''.join(random.choice(numbers) for i in range(size - lsize))
+	return randomLetters + randomNums
 
 
 def randomEmail(baseEmail, size):
-  letters = string.ascii_letters
-  randomString = ''.join(random.choice(letters) for i in range(size))
-  atIndex = baseEmail.index('@')
-  return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
+	letters = string.ascii_letters
+	randomString = ''.join(random.choice(letters) for i in range(size))
+	atIndex = baseEmail.index('@')
+	return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
+
+def randomName():
+	return ''.join(RandomWords().get_random_words(limit=2, maxLength=6))
+
+def nameAvailable(username):
+	with urllib.request.urlopen(RUN_CONFIG['USER_CHECK_URL'] + username) as url:
+		data = json.loads(url.read().decode())
+		valid = data['status']
+	return valid
+
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('baseEmail', help="Provide the base email address from which others will be generated")
+	parser.add_argument('driverType', help="Provide the type of selenium driver for this run e.g. chrome")
+	parser.add_argument('driverPath', help="Provide the path of the selenium driver you'll use")
+	parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
+	parser.add_argument('gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
+	parser.add_argument('--noop', dest='noop', action='store_true',
+						help="Provide flag --noop if you want the operation to be a no-op")
+	parser.set_defaults(noop=False)
+
+	# parse args
+	args = parser.parse_args()
+	RUN_CONFIG['BASE_EMAIL'] = args.baseEmail
+	RUN_CONFIG['DRIVER_TYPE'] = args.driverType
+	RUN_CONFIG['DRIVER_PATH'] = args.driverPath
+	RUN_CONFIG['KEY_FILE'] = args.keyFile
+	RUN_CONFIG['GSHEET_URL'] = args.gsheetURL
+	RUN_CONFIG['NOOP'] = args.noop
+
+	logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+
+	if args.noop:
+		LOGGER.debug('NO-OP run specified, dumping configuration parameters...')
+		for k, v in RUN_CONFIG.items():
+			print(k, v)
+		exit(0)
+
+	username = randomName()
+	while not nameAvailable(username):
+		username = randomName()
+	try:
+		list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], username)
+		Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
+	except Exception as ex:
+		template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+		message = template.format(type(ex).__name__, ex.args)
+		LOGGER.debug(message)
+	finally:
+		LOGGER.debug('Cleaning up...')
 
 
-if __name__ == '__main__':
-  dir_path = os.path.dirname(os.path.realpath(__file__))
-  print('Thanks for using the EA Account Creator tool! A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
-  print(dir_path + '\n')
-  try:
-    while True:
-      browserChoice = input(
-          'Please select your browser:'
-          '\n1)\tChrome'
-          '\n2)\tMozilla'
-          '\n'
-      )
-      if browserChoice == '1' or browserChoice.lower() == 'chrome':
-        browserVer = 'Chrome'
-        break
-      elif browserChoice == '2' or browserChoice.lower() == 'mozilla':
-        browserVer = 'Mozilla'
-        break
-      else:
-        print('Invalid entry. Please choose the cooresponding number or text.')
-
-    baseEmail = input('Base email address? (e.g. user@email.com) ')
-    while True:
-      choice = input('Create new account? ')
-      if choice.lower() in {'y', 'yes'}:
-        valid = False
-        while not valid:
-          username = input('Desired username (blank for random): ')
-          if not username:
-            username = ''.join(RandomWords().get_random_words(limit=2, maxLength=6))
-            print(f'Attempting: {username}')
-          with urllib.request.urlopen(USER_CHECK_URL + username) as url:
-            data = json.loads(url.read().decode())
-            valid = data['status']
-          if not valid:
-            print('Username not available.')
-        createAccount(browserVer, baseEmail, username)
-      elif choice.lower() in {'n', 'no'}:
-        sys.exit(0)
-
-  except KeyboardInterrupt:
-    print('Exiting...')
-    sys.exit(0)
+if __name__ == "__main__":
+	main()
