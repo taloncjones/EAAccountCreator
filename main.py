@@ -4,8 +4,10 @@ import urllib.request
 import json
 import logging
 import argparse
+import time
 import Browser.browser as Browser
 import Sheet.sheet as Sheet
+import Gmail.gmail as Gmail
 
 from random_word import RandomWords
 
@@ -15,7 +17,10 @@ RUN_CONFIG['USER_CHECK_URL'] = 'https://signin.ea.com/p/ajax/user/checkOriginId?
 
 LOGGER = logging.getLogger(__name__)
 
-def createAccount(browserType, browserPath, baseEmail, username):
+MAX_RETRIES = 5
+
+
+def createAccount(browserType, browserPath, baseEmail, email_credentials, username):
 	email = randomEmail(baseEmail, 12)
 	password = randomPassword(16)
 	browser = Browser.Browser(browserType, browserPath, email, username, password)
@@ -69,8 +74,21 @@ def createAccount(browserType, browserPath, baseEmail, username):
 
 	list = [browser.username, browser.email, browser.password]
 
-	# Wait for verification code
-	verify = input('Enter Verification: ')
+	# Check email for verification code
+	email_info = {}
+	email_info['from'] = 'EA@e.ea.com'
+	email_info['subject'] = 'Your EA Security Code is'
+	email_info['unseen'] = True
+	for i in range(0, MAX_RETRIES):
+		iteration = i + 1
+		verify = Gmail.get_verification_code(email_credentials, email_info)
+		if not verify:
+			if (iteration == MAX_RETRIES):
+				raise TimeoutError('Maximum number of verification code checks hit: {i}. Aborting...'.format(i=MAX_RETRIES))
+			else:
+				time.sleep(5)		
+		else:
+			break
 	browser.fillText('emailVerifyCode', verify)
 	browser.clickButton('btnMEVVerify')
 
@@ -114,6 +132,7 @@ def main():
 	parser.add_argument('driverPath', help="Provide the path of the selenium driver you'll use")
 	parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
 	parser.add_argument('gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
+	parser.add_argument('emailCredentials', help="Provide the email app's credentials to access and read email")
 	parser.add_argument('--noop', dest='noop', action='store_true',
 						help="Provide flag --noop if you want the operation to be a no-op")
 	parser.set_defaults(noop=False)
@@ -125,6 +144,7 @@ def main():
 	RUN_CONFIG['DRIVER_PATH'] = args.driverPath
 	RUN_CONFIG['KEY_FILE'] = args.keyFile
 	RUN_CONFIG['GSHEET_URL'] = args.gsheetURL
+	RUN_CONFIG['EMAIL_CREDENTIALS'] = args.emailCredentials
 	RUN_CONFIG['NOOP'] = args.noop
 
 	logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
@@ -139,7 +159,7 @@ def main():
 	while not nameAvailable(username):
 		username = randomName()
 	try:
-		list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], username)
+		list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], RUN_CONFIG['EMAIL_CREDENTIALS'], username)
 		Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
 	except Exception as ex:
 		template = "An exception of type {0} occurred. Arguments:\n{1!r}"
