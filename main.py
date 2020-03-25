@@ -77,6 +77,7 @@ def createAccount(browserType, browserPath, baseEmail, email_credentials, userna
 	# Check email for verification code
 	email_info = {}
 	email_info['from'] = 'EA@e.ea.com'
+	email_info['to'] = email
 	email_info['subject'] = 'Your EA Security Code is'
 	email_info['unseen'] = True
 	for i in range(0, MAX_RETRIES):
