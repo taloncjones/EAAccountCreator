@@ -189,6 +189,10 @@ def main():
 		finally:
 			LOGGER.debug('Cleaning up...')
 	else:
+		dir_path = os.path.dirname(os.path.realpath(__file__))
+		print('A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
+		print(dir_path + '\n')
+
 		baseEmail = input("Enter base email (e.g. bob@gmail.com): ")
 		emailCredentials = (baseEmail, getpass.getpass(prompt="Email password: "))
 
