@@ -42,6 +42,9 @@ def connect(user, password):
 
 # Loads user, password from credentialsFile
 def get_credentials(credentialsFile):
+    if type(credentialsFile) is tuple:
+        return (credentialsFile[0], credentialsFile[1])
+
     with open(credentialsFile, 'r') as f:
         data = json.load(f)
 
