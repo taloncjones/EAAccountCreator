@@ -16,7 +16,7 @@ import random
 RUN_CONFIG = {}
 RUN_CONFIG['EA_URL'] = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
 RUN_CONFIG['USER_CHECK_URL'] = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
-RUN_CONFIG['WORD_LIST'] = '/usr/share/dict/words/'
+RUN_CONFIG['WORD_LIST'] = 'words'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -125,8 +125,6 @@ def randomName():
 	return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + str(random.randrange(100, 1000))
 
 
-
-
 def nameAvailable(username):
 	with urllib.request.urlopen(RUN_CONFIG['USER_CHECK_URL'] + username) as url:
 		data = json.loads(url.read().decode())
@@ -229,7 +227,6 @@ def main():
 					LOGGER.debug('Cleaning up...')
 			elif choice.lower() in {'n','no'}:
 				break
-
 
 
 if __name__ == "__main__":
