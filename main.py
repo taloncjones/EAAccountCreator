@@ -11,12 +11,12 @@ import os
 import Browser.browser as Browser
 import Sheet.sheet as Sheet
 import Gmail.gmail as Gmail
-
-from random_word import RandomWords
+import random
 
 RUN_CONFIG = {}
 RUN_CONFIG['EA_URL'] = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
 RUN_CONFIG['USER_CHECK_URL'] = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
+RUN_CONFIG['WORD_LIST'] = '/usr/share/dict/words/'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -122,7 +122,9 @@ def randomEmail(baseEmail, size):
 
 
 def randomName():
-	return ''.join(RandomWords().get_random_words(limit=2, maxLength=6))
+	return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + str(random.randrange(100, 1000))
+
+
 
 
 def nameAvailable(username):
