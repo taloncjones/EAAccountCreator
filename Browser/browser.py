@@ -28,6 +28,13 @@ class Browser:
 			ch_options.add_argument('--window-size=500,500')
 			ch_options.add_argument('--window-position=-2000,0')
 			return webdriver.Chrome(self.browserPath, options=ch_options)
+		elif self.browserType == 'mozilla':
+			mz_options = webdriver.FirefoxOptions()
+			mz_options.add_argument('--width=600')
+			mz_options.add_argument('--height=600')
+			driver = webdriver.Firefox(self.browserPath, options=mz_options)
+			driver.set_window_position(-2000,0)
+			return driver
 
 	def quit(self):
 		self.browser.quit()

@@ -4,8 +4,13 @@ import urllib.request
 import json
 import logging
 import argparse
+import time
+import getpass
+import sys
+import os
 import Browser.browser as Browser
 import Sheet.sheet as Sheet
+import Gmail.gmail as Gmail
 import random
 
 RUN_CONFIG = {}
@@ -15,7 +20,10 @@ RUN_CONFIG['WORD_LIST'] = '/usr/share/dict/words/'
 
 LOGGER = logging.getLogger(__name__)
 
-def createAccount(browserType, browserPath, baseEmail, username):
+MAX_RETRIES = 5
+
+
+def createAccount(browserType, browserPath, baseEmail, email_credentials, username):
 	email = randomEmail(baseEmail, 12)
 	password = randomPassword(16)
 	browser = Browser.Browser(browserType, browserPath, email, username, password)
@@ -69,8 +77,22 @@ def createAccount(browserType, browserPath, baseEmail, username):
 
 	list = [browser.username, browser.email, browser.password]
 
-	# Wait for verification code
-	verify = input('Enter Verification: ')
+	# Check email for verification code
+	email_info = {}
+	email_info['from'] = 'EA@e.ea.com'
+	email_info['to'] = email
+	email_info['subject'] = 'Your EA Security Code is'
+	email_info['unseen'] = True
+	for i in range(0, MAX_RETRIES):
+		iteration = i + 1
+		verify = Gmail.get_verification_code(email_credentials, email_info)
+		if not verify:
+			if (iteration == MAX_RETRIES):
+				raise TimeoutError('Maximum number of verification code checks hit: {i}. Aborting...'.format(i=MAX_RETRIES))
+			else:
+				time.sleep(5)		
+		else:
+			break
 	browser.fillText('emailVerifyCode', verify)
 	browser.clickButton('btnMEVVerify')
 
@@ -98,8 +120,10 @@ def randomEmail(baseEmail, size):
 	atIndex = baseEmail.index('@')
 	return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
 
+
 def randomName():
 	return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + str(random.randrange(100, 1000))
+
 
 
 
@@ -109,46 +133,103 @@ def nameAvailable(username):
 		valid = data['status']
 	return valid
 
+
+def resource_path(relative_path):
+    '''
+    Returns the absolute location of file at relative_path.
+    relative_path (str): The relative location of the file in question
+    '''
+    # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
+    try:
+      base_path = sys._MEIPASS
+    except Exception:
+      base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, relative_path)
+
+
 def main():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('baseEmail', help="Provide the base email address from which others will be generated")
-	parser.add_argument('driverType', help="Provide the type of selenium driver for this run e.g. chrome")
-	parser.add_argument('driverPath', help="Provide the path of the selenium driver you'll use")
-	parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
-	parser.add_argument('gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
-	parser.add_argument('--noop', dest='noop', action='store_true',
-						help="Provide flag --noop if you want the operation to be a no-op")
-	parser.set_defaults(noop=False)
+	if len(sys.argv) > 1:
+		parser = argparse.ArgumentParser()
+		parser.add_argument('baseEmail', help="Provide the base email address from which others will be generated")
+		parser.add_argument('driverType', help="Provide the type of selenium driver for this run e.g. chrome")
+		parser.add_argument('driverPath', help="Provide the path of the selenium driver you'll use")
+		parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
+		parser.add_argument('gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
+		parser.add_argument('emailCredentials', help="Provide the email app's credentials to access and read email")
+		parser.add_argument('--noop', dest='noop', action='store_true',
+							help="Provide flag --noop if you want the operation to be a no-op")
+		parser.set_defaults(noop=False)
 
-	# parse args
-	args = parser.parse_args()
-	RUN_CONFIG['BASE_EMAIL'] = args.baseEmail
-	RUN_CONFIG['DRIVER_TYPE'] = args.driverType
-	RUN_CONFIG['DRIVER_PATH'] = args.driverPath
-	RUN_CONFIG['KEY_FILE'] = args.keyFile
-	RUN_CONFIG['GSHEET_URL'] = args.gsheetURL
-	RUN_CONFIG['NOOP'] = args.noop
+		# parse args
+		args = parser.parse_args()
+		RUN_CONFIG['BASE_EMAIL'] = args.baseEmail
+		RUN_CONFIG['DRIVER_TYPE'] = args.driverType
+		RUN_CONFIG['DRIVER_PATH'] = args.driverPath
+		RUN_CONFIG['KEY_FILE'] = args.keyFile
+		RUN_CONFIG['GSHEET_URL'] = args.gsheetURL
+		RUN_CONFIG['EMAIL_CREDENTIALS'] = args.emailCredentials
+		RUN_CONFIG['NOOP'] = args.noop
 
-	logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+		logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
-	if args.noop:
-		LOGGER.debug('NO-OP run specified, dumping configuration parameters...')
-		for k, v in RUN_CONFIG.items():
-			print(k, v)
-		exit(0)
+		if args.noop:
+			LOGGER.debug('NO-OP run specified, dumping configuration parameters...')
+			for k, v in RUN_CONFIG.items():
+				print(k, v)
+			exit(0)
 
-	username = randomName()
-	while not nameAvailable(username):
 		username = randomName()
-	try:
-		list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], username)
-		Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
-	except Exception as ex:
-		template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-		message = template.format(type(ex).__name__, ex.args)
-		LOGGER.debug(message)
-	finally:
-		LOGGER.debug('Cleaning up...')
+		while not nameAvailable(username):
+			username = randomName()
+		try:
+			list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], RUN_CONFIG['EMAIL_CREDENTIALS'], username)
+			Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
+		except Exception as ex:
+			template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+			message = template.format(type(ex).__name__, ex.args)
+			LOGGER.debug(message)
+		finally:
+			LOGGER.debug('Cleaning up...')
+	else:
+		dir_path = os.path.dirname(os.path.realpath(__file__))
+		print('A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
+		print(dir_path + '\n')
+
+		baseEmail = input("Enter base email (e.g. bob@gmail.com): ")
+		emailCredentials = (baseEmail, getpass.getpass(prompt="Email password: "))
+
+		driverNum = 0
+		while driverNum not in {1,2}:
+			driverNum = int(input("Choose your browser version (1 or 2):\n1. Chrome\n2. Firefox\n"))
+		if driverNum == 1:
+			driverType = 'chrome'
+			driverPath = resource_path('chromedriver')
+		else:
+			driverType = 'mozilla'
+			driverPath = resource_path('geckodriver')
+
+		while True:
+			choice = input("Make new account? (y/n): ")
+			if choice.lower() in {'y','yes'}:
+				username = randomName()
+				while not nameAvailable(username):
+					username = randomName()
+				try:
+					list = createAccount(driverType, driverPath, baseEmail, emailCredentials, username)
+					print('Username: {}\nEmail: {}\nPassword: {}\n'.format(*list))
+					with open('accounts.txt', 'a') as file:
+						file.write('Account:\n')
+						file.write('Username: {}\nEmail: {}\nPassword: {}\n'.format(*list))
+						file.write('\n')
+				except Exception as ex:
+					template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+					message = template.format(type(ex).__name__, ex.args)
+					LOGGER.debug(message)
+				finally:
+					LOGGER.debug('Cleaning up...')
+			elif choice.lower() in {'n','no'}:
+				break
+
 
 
 if __name__ == "__main__":
