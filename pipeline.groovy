@@ -18,7 +18,7 @@ pipeline {
       stage('Run EAAccountCreator script') {
           steps {
               withCredentials([string(credentialsId: 'eaaccountcreatorsheet', variable: 'eaaccountcreatorsheet')]) {
-                sh "echo \$eaaccountcreatorsheet"
+                sh "python3 main.py 'chrome' '/home/josh/chromedriver/' 'accounts.json' '\$eaaccountcreatorsheet' 'email.json'"
             }
           }
       }
