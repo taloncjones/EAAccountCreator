@@ -19,7 +19,7 @@ pipeline {
           steps {
               withCredentials([string(credentialsId: 'eaaccountcreatorsheet', variable: 'eaaccountcreatorsheet')]) {
                 sh """
-                	python3 main.py 'chrome' '/chromedriver' 'accounts.json' '\$eaaccountcreatorsheet' 'email.json'
+                    ssh josh@10.10.12.8 python3  /home/josh/dockerconfigs/jenkins/workspace/eaaccountcreator/main.py 'chrome' '/home/josh/dockerconfigs/jenkins/chromedriver' '/home/josh/dockerconfigs/jenkins/workspace/eaaccountcreator/accounts.json' \$eaaccountcreatorsheet '/home/josh/dockerconfigs/jenkins/workspace/eaaccountcreator/email.json'
                 """
             }
           }
