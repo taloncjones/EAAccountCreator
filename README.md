@@ -1,6 +1,8 @@
 # EA Account Creator
 
-Automate the EA account creation process as much as possible. You will be asked for a base email (e.g. base@gmail.com) which will be used for all created accounts (e.g. base+woeriuwyrieh@gmail.com), and a username (must be unique). The script will then randomly generate a password, create the account, and push the output to a given Google Sheet.
+Automate the EA account creation process as much as possible. You will need to provide a gmail account and an app-specific password in an emailCredentials JSON file - this gmail account will be used as the base email address for all generated EA accounts. This script will use that base email address to randomly generate passwords, usernames, and push the output to a given Google Sheet for retrieval.
+
+You'll need to setup an app-specific password for the given gmail account, create a Google Sheet and associated automation account with edit access to that sheet, and install the Chromedriver for your version of Chrome.
 
 #### Installation
 
@@ -20,26 +22,33 @@ pip install -r requirements.txt
 
 
 
+#### Setup Google Account
+
+@Talon is going to fill this out with screenshots and step by step process
+
+
+
 #### Usage
 
 ```
-usage: main.py [-h] [--noop] baseEmail driverType driverPath keyFile gsheetURL
+usage: main.py [-h] [--noop]
+               driverType driverPath keyFile gsheetURL emailCredentials
 
 positional arguments:
-  baseEmail   Provide the base email address from which others will be
-              generated
-  driverType  Provide the type of selenium driver for this run e.g. chrome
-  driverPath  Provide the path of the selenium driver you'll use
-  keyFile     Provide the generic account's key file that has Edit access to
-              the following GSheet
-  gsheetURL   Provide the Google Sheet URL where account details will be
-              appended
+  driverType        Provide the type of selenium driver for this run e.g.
+                    chrome
+  driverPath        Provide the path of the selenium driver you'll use
+  keyFile           Provide the generic account's key file that has Edit
+                    access to the following GSheet
+  gsheetURL         Provide the Google Sheet URL where account details will be
+                    appended
+  emailCredentials  Provide the email app's credentials to access and read
+                    email
 
 optional arguments:
-  -h, --help  show this help message and exit
-  --noop      Provide flag --noop if you want the operation to be a no-op,
-              meaning it won't actually connect to Adobe Analytics to pull
-              fresh data, but will run all other functions.
+  -h, --help        show this help message and exit
+  --noop            Provide flag --noop if you want the operation to be a no-
+                    op
 ```
 
 

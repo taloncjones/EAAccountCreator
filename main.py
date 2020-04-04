@@ -149,101 +149,88 @@ def resource_path(relative_path):
 
 
 def main():
-    if len(sys.argv) > 1:
-        parser = argparse.ArgumentParser()
-        parser.add_argument(
-            'baseEmail', help="Provide the base email address from which others will be generated")
-        parser.add_argument(
-            'driverType', help="Provide the type of selenium driver for this run e.g. chrome")
-        parser.add_argument(
-            'driverPath', help="Provide the path of the selenium driver you'll use")
-        parser.add_argument(
-            'keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
-        parser.add_argument(
-            'gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
-        parser.add_argument(
-            'emailCredentials', help="Provide the email app's credentials to access and read email")
-        parser.add_argument('--noop', dest='noop', action='store_true',
-                            help="Provide flag --noop if you want the operation to be a no-op")
-        parser.set_defaults(noop=False)
+	if len(sys.argv) > 1:
+		parser = argparse.ArgumentParser()
+		parser.add_argument('driverType', help="Provide the type of selenium driver for this run e.g. chrome")
+		parser.add_argument('driverPath', help="Provide the path of the selenium driver you'll use")
+		parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
+		parser.add_argument('gsheetURL', help="Provide the Google Sheet URL where account details will be appended")
+		parser.add_argument('emailCredentials', help="Provide the email app's credentials to access and read email")
+		parser.add_argument('--noop', dest='noop', action='store_true',
+							help="Provide flag --noop if you want the operation to be a no-op")
+		parser.set_defaults(noop=False)
 
-        # parse args
-        args = parser.parse_args()
-        RUN_CONFIG['BASE_EMAIL'] = args.baseEmail
-        RUN_CONFIG['DRIVER_TYPE'] = args.driverType
-        RUN_CONFIG['DRIVER_PATH'] = args.driverPath
-        RUN_CONFIG['KEY_FILE'] = args.keyFile
-        RUN_CONFIG['GSHEET_URL'] = args.gsheetURL
-        RUN_CONFIG['EMAIL_CREDENTIALS'] = args.emailCredentials
-        RUN_CONFIG['NOOP'] = args.noop
+		# parse args
+		args = parser.parse_args()
+		RUN_CONFIG['DRIVER_TYPE'] = args.driverType
+		RUN_CONFIG['DRIVER_PATH'] = args.driverPath
+		RUN_CONFIG['KEY_FILE'] = args.keyFile
+		RUN_CONFIG['GSHEET_URL'] = args.gsheetURL
+		RUN_CONFIG['EMAIL_CREDENTIALS'] = args.emailCredentials
+		RUN_CONFIG['NOOP'] = args.noop
 
-        logging.basicConfig(
-            format='%(asctime)s %(message)s', level=logging.DEBUG)
+		logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
-        if args.noop:
-            LOGGER.debug(
-                'NO-OP run specified, dumping configuration parameters...')
-            for k, v in RUN_CONFIG.items():
-                print(k, v)
-            exit(0)
+		if args.noop:
+			LOGGER.debug('NO-OP run specified, dumping configuration parameters...')
+			for k, v in RUN_CONFIG.items():
+				print(k, v)
+			exit(0)
 
-        username = randomName()
-        while not nameAvailable(username):
-            username = randomName()
-        try:
-            list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'],
-                                 RUN_CONFIG['BASE_EMAIL'], RUN_CONFIG['EMAIL_CREDENTIALS'], username)
-            Sheet.writeToSheet(
-                RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            LOGGER.debug(message)
-        finally:
-            LOGGER.debug('Cleaning up...')
-    else:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        print('A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
-        print(dir_path + '\n')
+		# extract base email
+		RUN_CONFIG['BASE_EMAIL'] = Gmail.get_email_address(RUN_CONFIG['EMAIL_CREDENTIALS'])
 
-        baseEmail = input("Enter base email (e.g. bob@gmail.com): ")
-        emailCredentials = (baseEmail, getpass.getpass(
-            prompt="Email password: "))
+		username = randomName()
+		while not nameAvailable(username):
+			username = randomName()
+		try:
+			list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], RUN_CONFIG['EMAIL_CREDENTIALS'], username)
+			Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
+		except Exception as ex:
+			template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+			message = template.format(type(ex).__name__, ex.args)
+			LOGGER.debug(message)
+		finally:
+			LOGGER.debug('Cleaning up...')
+	else:
+		dir_path = os.path.dirname(os.path.realpath(__file__))
+		print('A list of created accounts (emails, usernames, passwords) can be found in your default home directory:')
+		print(dir_path + '\n')
 
-        driverNum = 0
-        while driverNum not in {1, 2}:
-            driverNum = int(
-                input("Choose your browser version (1 or 2):\n1. Chrome\n2. Firefox\n"))
-        if driverNum == 1:
-            driverType = 'chrome'
-            driverPath = resource_path('chromedriver')
-        else:
-            driverType = 'mozilla'
-            driverPath = resource_path('geckodriver')
+		baseEmail = input("Enter base email (e.g. bob@gmail.com): ")
+		emailCredentials = (baseEmail, getpass.getpass(prompt="Email password: "))
 
-        while True:
-            choice = input("Make new account? (y/n): ")
-            if choice.lower() in {'y', 'yes'}:
-                username = randomName()
-                while not nameAvailable(username):
-                    username = randomName()
-                try:
-                    list = createAccount(
-                        driverType, driverPath, baseEmail, emailCredentials, username)
-                    print('Username: {}\nEmail: {}\nPassword: {}\n'.format(*list))
-                    with open('accounts.txt', 'a') as file:
-                        file.write('Account:\n')
-                        file.write(
-                            'Username: {}\nEmail: {}\nPassword: {}\n'.format(*list))
-                        file.write('\n')
-                except Exception as ex:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    LOGGER.debug(message)
-                finally:
-                    LOGGER.debug('Cleaning up...')
-            elif choice.lower() in {'n', 'no'}:
-                break
+		driverNum = 0
+		while driverNum not in {1,2}:
+			driverNum = int(input("Choose your browser version (1 or 2):\n1. Chrome\n2. Firefox\n"))
+		if driverNum == 1:
+			driverType = 'chrome'
+			driverPath = resource_path('chromedriver')
+		else:
+			driverType = 'mozilla'
+			driverPath = resource_path('geckodriver')
+
+		while True:
+			choice = input("Make new account? (y/n): ")
+			if choice.lower() in {'y','yes'}:
+				username = randomName()
+				while not nameAvailable(username):
+					username = randomName()
+				try:
+					list = createAccount(driverType, driverPath, baseEmail, emailCredentials, username)
+					print('Username: {}\nEmail: {}\nPassword: {}\n'.format(*list))
+					with open('accounts.txt', 'a') as file:
+						file.write('Account:\n')
+						file.write('Username: {}\nEmail: {}\nPassword: {}\n'.format(*list))
+						file.write('\n')
+				except Exception as ex:
+					template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+					message = template.format(type(ex).__name__, ex.args)
+					LOGGER.debug(message)
+				finally:
+					LOGGER.debug('Cleaning up...')
+			elif choice.lower() in {'n','no'}:
+				break
 
 
 if __name__ == "__main__":
