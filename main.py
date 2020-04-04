@@ -16,7 +16,7 @@ import random
 RUN_CONFIG = {}
 RUN_CONFIG['EA_URL'] = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
 RUN_CONFIG['USER_CHECK_URL'] = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
-RUN_CONFIG['WORD_LIST'] = '/usr/share/dict/words/'
+RUN_CONFIG['WORD_LIST'] = 'words'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,114 +24,115 @@ MAX_RETRIES = 5
 
 
 def createAccount(browserType, browserPath, baseEmail, email_credentials, username):
-	email = randomEmail(baseEmail, 12)
-	password = randomPassword(16)
-	browser = Browser.Browser(browserType, browserPath, email, username, password)
-	browser.goToURL(RUN_CONFIG['EA_URL'])
+    email = randomEmail(baseEmail, 12)
+    password = randomPassword(16)
+    browser = Browser.Browser(browserType, browserPath,
+                              email, username, password)
+    browser.goToURL(RUN_CONFIG['EA_URL'])
 
-	# Initial Email Check
-	browser.fillText('email', email)
-	browser.clickButton('btn-next')
+    # Initial Email Check
+    browser.fillText('email', email)
+    browser.clickButton('btn-next')
 
-	# Username, Password, Security Q
-	browser.fillText('originId', browser.username)
-	browser.fillText('password', browser.password)
-	browser.fillText('confirmPassword', browser.password)
-	browser.moveToNext()
-	browser.keyDown()
-	browser.fillText('securityAnswer', browser.username)
+    # Username, Password, Security Q
+    browser.fillText('originId', browser.username)
+    browser.fillText('password', browser.password)
+    browser.fillText('confirmPassword', browser.password)
+    browser.moveToNext()
+    browser.keyDown()
+    browser.fillText('securityAnswer', browser.username)
 
-	# DoB
-	# EA uses DIVs and classes to control and display their dropdowns... Navigating with TAB and ARROWS is a bit easier
-	browser.moveToNext(2)
-	browser.keyDown()
-	browser.moveToNext()
-	browser.keyDown()
-	browser.moveToNext()
-	browser.keyDown(20)
+    # DoB
+    # EA uses DIVs and classes to control and display their dropdowns... Navigating with TAB and ARROWS is a bit easier
+    browser.moveToNext(2)
+    browser.keyDown()
+    browser.moveToNext()
+    browser.keyDown()
+    browser.moveToNext()
+    browser.keyDown(20)
 
-	# Captcha, Checkboxes
-	humanCheck = browser.checkFor('captcha-container2')
-	if browser.browserType == 'chrome':
-		browser.clickButton('contact-me-container')
-		browser.clickButton('read-accept-container')
-	elif browser.browserType == 'mozilla':
-		browser.moveToNext(4 if humanCheck else 1)
-		browser.keySpace()
-		browser.moveToNext()
-		browser.keySpace()
+    # Captcha, Checkboxes
+    humanCheck = browser.checkFor('captcha-container2')
+    if browser.browserType == 'chrome':
+        browser.clickButton('contact-me-container')
+        browser.clickButton('read-accept-container')
+    elif browser.browserType == 'mozilla':
+        browser.moveToNext(4 if humanCheck else 1)
+        browser.keySpace()
+        browser.moveToNext()
+        browser.keySpace()
 
-	# If Captcha, wait for human to solve, then continue
-	if humanCheck:
-		verifyHuman = False
-		browser.showWindow()
-		LOGGER.debug('Captcha detected! Please complete captcha to continue...')
-		while not verifyHuman:
-			verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
-		browser.hideWindow()
+    # If Captcha, wait for human to solve, then continue
+    if humanCheck:
+        verifyHuman = False
+        browser.showWindow()
+        LOGGER.debug(
+            'Captcha detected! Please complete captcha to continue...')
+        while not verifyHuman:
+            verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
+        browser.hideWindow()
 
-	browser.clickButton('submit-btn')
+    browser.clickButton('submit-btn')
 
-	# Skip real name info
-	browser.clickButton('btn-skip', 'class')
+    # Skip real name info
+    browser.clickButton('btn-skip', 'class')
 
-	list = [browser.username, browser.email, browser.password]
+    list = [browser.username, browser.email, browser.password]
 
-	# Check email for verification code
-	email_info = {}
-	email_info['from'] = 'EA@e.ea.com'
-	email_info['to'] = email
-	email_info['subject'] = 'Your EA Security Code is'
-	email_info['unseen'] = True
-	for i in range(0, MAX_RETRIES):
-		iteration = i + 1
-		verify = Gmail.get_verification_code(email_credentials, email_info)
-		if not verify:
-			if (iteration == MAX_RETRIES):
-				raise TimeoutError('Maximum number of verification code checks hit: {i}. Aborting...'.format(i=MAX_RETRIES))
-			else:
-				time.sleep(5)		
-		else:
-			break
-	browser.fillText('emailVerifyCode', verify)
-	browser.clickButton('btnMEVVerify')
+    # Check email for verification code
+    email_info = {}
+    email_info['from'] = 'EA@e.ea.com'
+    email_info['to'] = email
+    email_info['subject'] = 'Your EA Security Code is'
+    email_info['unseen'] = True
+    for i in range(0, MAX_RETRIES):
+        iteration = i + 1
+        verify = Gmail.get_verification_code(email_credentials, email_info)
+        if not verify:
+            if (iteration == MAX_RETRIES):
+                raise TimeoutError(
+                    'Maximum number of verification code checks hit: {i}. Aborting...'.format(i=MAX_RETRIES))
+            else:
+                time.sleep(5)
+        else:
+            break
+    browser.fillText('emailVerifyCode', verify)
+    browser.clickButton('btnMEVVerify')
 
-	# Complete process and exit
-	browser.clickButton('btnMEVComplete')
-	browser.quit()
+    # Complete process and exit
+    browser.clickButton('btnMEVComplete')
+    browser.quit()
 
-	LOGGER.debug('Account creation complete.\n\n')
+    LOGGER.debug('Account creation complete.\n\n')
 
-	return list
+    return list
 
 
 def randomPassword(size):
-	letters = string.ascii_letters
-	numbers = string.digits
-	lsize = int(size * 3 / 4)
-	randomLetters = ''.join(random.choice(letters) for i in range(lsize))
-	randomNums = ''.join(random.choice(numbers) for i in range(size - lsize))
-	return randomLetters + randomNums
+    letters = string.ascii_letters
+    numbers = string.digits
+    lsize = int(size * 3 / 4)
+    randomLetters = ''.join(random.choice(letters) for i in range(lsize))
+    randomNums = ''.join(random.choice(numbers) for i in range(size - lsize))
+    return randomLetters + randomNums
 
 
 def randomEmail(baseEmail, size):
-	letters = string.ascii_letters
-	randomString = ''.join(random.choice(letters) for i in range(size))
-	atIndex = baseEmail.index('@')
-	return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
+    letters = string.ascii_letters
+    randomString = ''.join(random.choice(letters) for i in range(size))
+    atIndex = baseEmail.index('@')
+    return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
 
 
 def randomName():
-	return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + str(random.randrange(100, 1000))
-
-
+    return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + str(random.randrange(100, 1000))
 
 
 def nameAvailable(username):
-	with urllib.request.urlopen(RUN_CONFIG['USER_CHECK_URL'] + username) as url:
-		data = json.loads(url.read().decode())
-		valid = data['status']
-	return valid
+    with urllib.request.urlopen(RUN_CONFIG['USER_CHECK_URL'] + username) as url:
+        data = json.loads(url.read().decode())
+        valid = data['status']
+    return valid
 
 
 def resource_path(relative_path):
@@ -141,9 +142,9 @@ def resource_path(relative_path):
     '''
     # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
     try:
-      base_path = sys._MEIPASS
+        base_path = sys._MEIPASS
     except Exception:
-      base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 
@@ -232,6 +233,5 @@ def main():
 				break
 
 
-
 if __name__ == "__main__":
-	main()
+    main()
