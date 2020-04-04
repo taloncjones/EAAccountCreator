@@ -50,6 +50,16 @@ def get_credentials(credentialsFile):
 
     return (data['email'], data['app_password'])
 
+# Get email from credentialsFile
+def get_email_address(credentialsFile):
+    email, password = get_credentials(credentialsFile)
+    return email
+
+# Get password from credentialsFile
+def get_email_password(credentialsFile):
+    email, password = get_credentials(credentialsFile)
+    return password
+
 
 # Takes in credentials, email_info and returns EA verification code
 def get_verification_code(credentialsFile, email_info):

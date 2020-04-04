@@ -150,7 +150,6 @@ def resource_path(relative_path):
 def main():
 	if len(sys.argv) > 1:
 		parser = argparse.ArgumentParser()
-		parser.add_argument('baseEmail', help="Provide the base email address from which others will be generated")
 		parser.add_argument('driverType', help="Provide the type of selenium driver for this run e.g. chrome")
 		parser.add_argument('driverPath', help="Provide the path of the selenium driver you'll use")
 		parser.add_argument('keyFile', help="Provide the generic account's key file that has Edit access to the following GSheet")
@@ -162,7 +161,6 @@ def main():
 
 		# parse args
 		args = parser.parse_args()
-		RUN_CONFIG['BASE_EMAIL'] = args.baseEmail
 		RUN_CONFIG['DRIVER_TYPE'] = args.driverType
 		RUN_CONFIG['DRIVER_PATH'] = args.driverPath
 		RUN_CONFIG['KEY_FILE'] = args.keyFile
@@ -177,6 +175,9 @@ def main():
 			for k, v in RUN_CONFIG.items():
 				print(k, v)
 			exit(0)
+
+		# extract base email
+		RUN_CONFIG['BASE_EMAIL'] = Gmail.get_email_address(RUN_CONFIG['EMAIL_CREDENTIALS'])
 
 		username = randomName()
 		while not nameAvailable(username):
