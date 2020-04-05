@@ -20,7 +20,7 @@ pipeline {
               withCredentials([string(credentialsId: 'eaaccountcreatorsheet', variable: 'eaaccountcreatorsheet')]) {
                 sh """
                 	pip3 install -r requirements.txt
-                    python3 main.py 'chrome' 'chromedriver' 'accounts.json' \$eaaccountcreatorsheet 'email.json'
+                    python3 main.py 'chrome' '/var/lib/jenkins/workspace/eaaccountcreator/chromedriver' 'accounts.json' \$eaaccountcreatorsheet 'email.json'
                 """
             }
           }
