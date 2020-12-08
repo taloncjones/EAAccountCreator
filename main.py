@@ -107,20 +107,21 @@ def createAccount(browserType, browserPath, baseEmail, email_credentials, userna
 	return list
 
 
+
 def randomPassword(size):
-	letters = string.ascii_letters
-	numbers = string.digits
-	lsize = int(size * 3 / 4)
-	randomLetters = ''.join(random.choice(letters) for i in range(lsize))
-	randomNums = ''.join(random.choice(numbers) for i in range(size - lsize))
-	return randomLetters + randomNums
+    letters = string.ascii_letters
+    numbers = string.digits
+    lsize = int(size * 3 / 4)
+    randomLetters = ''.join(random.choice(letters) for i in range(lsize))
+    randomNums = ''.join(random.choice(numbers) for i in range(size - lsize))
+    return randomLetters + randomNums
 
 
 def randomEmail(baseEmail, size):
-	letters = string.ascii_letters
-	randomString = ''.join(random.choice(letters) for i in range(size))
-	atIndex = baseEmail.index('@')
-	return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
+    letters = string.ascii_letters
+    randomString = ''.join(random.choice(letters) for i in range(size))
+    atIndex = baseEmail.index('@')
+    return baseEmail[:atIndex] + '+' + randomString + baseEmail[atIndex:]
 
 
 def randomName():
@@ -129,10 +130,10 @@ def randomName():
 
 
 def nameAvailable(username):
-	with urllib.request.urlopen(RUN_CONFIG['USER_CHECK_URL'] + username) as url:
-		data = json.loads(url.read().decode())
-		valid = data['status']
-	return valid
+    with urllib.request.urlopen(RUN_CONFIG['USER_CHECK_URL'] + username) as url:
+        data = json.loads(url.read().decode())
+        valid = data['status']
+    return valid
 
 
 def resource_path(relative_path):
@@ -142,9 +143,9 @@ def resource_path(relative_path):
     '''
     # sys._MEIPASS raises an error, but is used by pyinstaller to merge chromedriver into a single executable
     try:
-      base_path = sys._MEIPASS
+        base_path = sys._MEIPASS
     except Exception:
-      base_path = os.path.dirname(os.path.abspath(__file__))
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
 
@@ -232,6 +233,5 @@ def main():
 				break
 
 
-
 if __name__ == "__main__":
-	main()
+    main()
