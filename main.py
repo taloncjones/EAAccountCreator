@@ -14,7 +14,8 @@ import Gmail.gmail as Gmail
 import random
 
 RUN_CONFIG = {}
-RUN_CONFIG['EA_URL'] = 'https://signin.ea.com/p/web2/create?initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fresponse_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3De0cf8241-b0cf-446d-abdf-1c81ce5ea3ac%26client_id%3DEADOTCOM-WEB-SERVER%26display%3Dweb%252Fcreate'
+RUN_CONFIG['EA_URL'] = 'https://signin.ea.com/p/web2/create?execution=e381040894s1&initref=https%3A%2F%2Faccounts.ea.com%3A443%2Fconnect%2Fauth%3Fdisplay%3Dweb%252Fcreate%26response_type%3Dcode%26redirect_uri%3Dhttps%253A%252F%252Fwww.ea.com%252Flogin_check%26state%3D6e5e74f9-3dfa-4994-9a03-c925e0575061%26client_id%3DEADOTCOM-WEB-SERVER'
+
 RUN_CONFIG['USER_CHECK_URL'] = 'https://signin.ea.com/p/ajax/user/checkOriginId?originId='
 RUN_CONFIG['WORD_LIST'] = '/usr/share/dict/words'
 
@@ -24,10 +25,13 @@ MAX_RETRIES = 5
 
 
 def createAccount(browserType, browserPath, baseEmail, email_credentials, username):
-	email = randomEmail(baseEmail, 12)
+	email = randomEmail(baseEmail, 10)
 	password = randomPassword(16)
 	browser = Browser.Browser(browserType, browserPath, email, username, password)
 	browser.goToURL(RUN_CONFIG['EA_URL'])
+
+	list = [browser.username, browser.email, browser.password]
+	Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
 
 	# Initial Email Check
 	browser.fillText('email', email)
@@ -48,7 +52,7 @@ def createAccount(browserType, browserPath, baseEmail, email_credentials, userna
 	browser.moveToNext()
 	browser.keyDown()
 	browser.moveToNext()
-	browser.keyDown(20)
+	browser.keyDown(25)
 
 	# Captcha, Checkboxes
 	humanCheck = browser.checkFor('captcha-container2')
@@ -67,15 +71,13 @@ def createAccount(browserType, browserPath, baseEmail, email_credentials, userna
 		browser.showWindow()
 		LOGGER.debug('Captcha detected! Please complete captcha to continue...')
 		while not verifyHuman:
-			verifyHuman = browser.checkFor('fc_meta_success_text', 'class')
-		browser.hideWindow()
+			ret = input("Continue? Enter any character when ready") 
+			verifyHuman = True if len(ret) > 0 else False
 
 	browser.clickButton('submit-btn')
 
 	# Skip real name info
 	browser.clickButton('btn-skip', 'class')
-
-	list = [browser.username, browser.email, browser.password]
 
 	# Check email for verification code
 	email_info = {}
@@ -90,7 +92,7 @@ def createAccount(browserType, browserPath, baseEmail, email_credentials, userna
 			if (iteration == MAX_RETRIES):
 				raise TimeoutError('Maximum number of verification code checks hit: {i}. Aborting...'.format(i=MAX_RETRIES))
 			else:
-				time.sleep(5)		
+				time.sleep(30)
 		else:
 			break
 	browser.fillText('emailVerifyCode', verify)
@@ -122,8 +124,7 @@ def randomEmail(baseEmail, size):
 
 
 def randomName():
-	return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + str(random.randrange(100, 1000))
-
+	return random.choice(open(RUN_CONFIG['WORD_LIST']).read().splitlines()) + "TTV"
 
 
 
@@ -184,7 +185,6 @@ def main():
 			username = randomName()
 		try:
 			list = createAccount(RUN_CONFIG['DRIVER_TYPE'], RUN_CONFIG['DRIVER_PATH'], RUN_CONFIG['BASE_EMAIL'], RUN_CONFIG['EMAIL_CREDENTIALS'], username)
-			Sheet.writeToSheet(RUN_CONFIG['KEY_FILE'], RUN_CONFIG['GSHEET_URL'], list)
 		except Exception as ex:
 			template = "An exception of type {0} occurred. Arguments:\n{1!r}"
 			message = template.format(type(ex).__name__, ex.args)
